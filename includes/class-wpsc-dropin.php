@@ -9,6 +9,7 @@ class WPSC_Dropin {
         }
         $content = file_get_contents( $template_path );
         $settings = WPSC_Settings::instance();
+        $settings->refresh();
 
         $old_exclude   = $settings->get( 'exclude_urls', '' );
         $cache_dir     = $settings->get( 'cache_dir', WPSC_CACHE_DIR_DEFAULT );
@@ -101,7 +102,7 @@ class WPSC_Dropin {
             return false;
         }
         $content = file_get_contents( WPSC_DROPIN_PATH );
-        return strpos( $content, 'WP Static Cache' ) !== false;
+        return is_string( $content ) && strpos( $content, 'WP Static Cache' ) !== false;
     }
 
     public static function ensure_wp_cache_constant() {
@@ -113,17 +114,26 @@ class WPSC_Dropin {
             return;
         }
         $content = file_get_contents( $config_path );
-        if ( strpos( $content, "define( 'WP_CACHE', true )" ) === false && strpos( $content, "define( 'WP_CACHE', true );" ) === false ) {
-            $marker = "/* That's all, stop editing!";
+        if ( ! is_string( $content ) ) {
+            return;
+        }
+        $pattern = '/define\s*\(\s*[\'"]WP_CACHE[\'"]\s*,\s*(true|false)\s*\)\s*;/i';
+        if ( preg_match( $pattern, $content, $matches ) ) {
+            if ( strtolower( $matches[1] ) === 'false' ) {
+                $content = preg_replace( $pattern, "define( 'WP_CACHE', true );", $content, 1 );
+                file_put_contents( $config_path, $content );
+            }
+            return;
+        }
+        $marker = "/* That's all, stop editing!";
+        $pos = strpos( $content, $marker );
+        if ( $pos === false ) {
+            $marker = "require_once(ABSPATH . 'wp-settings.php')";
             $pos = strpos( $content, $marker );
-            if ( $pos === false ) {
-                $marker = "require_once(ABSPATH . 'wp-settings.php')";
-                $pos = strpos( $content, $marker );
-            }
-            if ( $pos !== false ) {
-                $new_content = substr( $content, 0, $pos ) . "define( 'WP_CACHE', true );\n\n" . substr( $content, $pos );
-                file_put_contents( $config_path, $new_content );
-            }
+        }
+        if ( $pos !== false ) {
+            $new_content = substr( $content, 0, $pos ) . "define( 'WP_CACHE', true );\n\n" . substr( $content, $pos );
+            file_put_contents( $config_path, $new_content );
         }
     }
 }

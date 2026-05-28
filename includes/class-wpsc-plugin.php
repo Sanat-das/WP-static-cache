@@ -52,6 +52,48 @@ class WPSC_Plugin {
         add_action( 'wp_ajax_wpsc_action', array( $this, 'handle_ajax_actions' ) );
         add_action( 'update_option_' . WPSC_SETTINGS_KEY, array( 'WPSC_Dropin', 'write' ) );
         add_filter( 'plugin_row_meta', array( $this, 'modify_plugin_row_meta' ), 10, 4 );
+        add_action( 'admin_notices', array( $this, 'maybe_show_wp_cache_notice' ) );
+    }
+
+    public function maybe_show_wp_cache_notice() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        if ( ! WPSC_Dropin::is_installed() ) {
+            return;
+        }
+        if ( defined( 'WP_CACHE' ) && WP_CACHE ) {
+            return;
+        }
+        $setting_link = add_query_arg( 'page', 'wp-static-cache', admin_url( 'options-general.php' ) );
+        ?>
+        <div class="notice notice-warning is-dismissible">
+            <p>
+                <strong>WP Static Cache:</strong>
+                <?php esc_html_e( 'The drop-in file is installed but the', 'wp-static-cache' ); ?>
+                <code>WP_CACHE</code>
+                <?php esc_html_e( 'constant is not set to', 'wp-static-cache' ); ?>
+                <code>true</code>.
+                <?php esc_html_e( 'The server cannot serve cached pages until this is fixed.', 'wp-static-cache' ); ?>
+            </p>
+            <p>
+                <?php esc_html_e( 'Please add the following line to your', 'wp-static-cache' ); ?>
+                <code>wp-config.php</code>
+                <?php esc_html_e( 'before the', 'wp-static-cache' ); ?>
+                <code>/* That&rsquo;s all, stop editing! */</code>
+                <?php esc_html_e( 'comment:', 'wp-static-cache' ); ?>
+            </p>
+            <p><code style="display:inline-block;background:#f0f0f1;padding:8px 12px;border:1px solid #c3c4c7;border-radius:4px;">define( 'WP_CACHE', true );</code></p>
+            <p>
+                <a href="<?php echo esc_url( $setting_link ); ?>" class="button button-primary">
+                    <?php esc_html_e( 'Re-deploy Drop-in', 'wp-static-cache' ); ?>
+                </a>
+                <span style="margin-left:10px;color:#666;font-size:12px;">
+                    <?php esc_html_e( 'After adding the line, visit the settings page and save to re-deploy the drop-in file.', 'wp-static-cache' ); ?>
+                </span>
+            </p>
+        </div>
+        <?php
     }
 
     public function add_admin_menu() {
