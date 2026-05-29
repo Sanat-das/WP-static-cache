@@ -26,6 +26,8 @@ The main overview page. Six AJAX-loaded cards show the entire plugin at a glance
 - **Preload Status** — Queue progress bar and current URL being crawled
 - **Recent Activity** — Last 8 raw log entries
 
+<img width="1753" height="834" alt="image" src="https://github.com/user-attachments/assets/4bef4aec-d0b1-49a5-8ae2-2df16ea0745f" />
+
 ---
 
 ### 2. General
