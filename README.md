@@ -40,6 +40,9 @@ Core global plugin settings rendered dynamically by `WPSC_Settings::render_field
 - Cache variation (mobile detection, scheme, query string handling)
 - Gzip pre-compression toggle
 
+  <img width="1743" height="901" alt="image" src="https://github.com/user-attachments/assets/76962b30-7bb2-4ca0-b99a-84330730b980" />
+
+
 ---
 
 ### 3. Public Cache
@@ -52,6 +55,9 @@ Disk-based page caching for **non-logged-in visitors only**.
 - **Nginx config** panel with copy-to-clipboard (shown when method = nginx)
 - **.htaccess notice** confirming rules written (shown when method = htaccess)
 
+  <img width="1743" height="899" alt="image" src="https://github.com/user-attachments/assets/a2a62e6a-6d88-462f-9e41-7f2759da6af6" />
+
+
 ---
 
 ### 4. Private Cache
@@ -62,6 +68,9 @@ Per-user isolated cache for **logged-in users**. Keyed by `md5(roles|user_id)` s
 - **Status badge** — Enabled/Disabled with colour coding
 - **Object Cache detection** — Shows whether `wp_cache_*` (Redis/Memcached) is available; if active, pages served from memory
 - Enable/disable toggle, role-based serving, expiry settings
+  
+<img width="1742" height="895" alt="image" src="https://github.com/user-attachments/assets/aa2e5ee4-7d90-4e25-8b1f-7eb40cd8e736" />
+
 
 ---
 
@@ -78,6 +87,9 @@ Background cache warmer with **Stale-While-Revalidate (SWR)**:
 - **Max pagination pages** per term (default: 1)
 - **SWR window** — seconds stale content is served while regenerating (default: 300)
 
+<img width="1747" height="906" alt="image" src="https://github.com/user-attachments/assets/f572f2d2-959c-47f9-a7f4-13a659fecb95" />
+
+
 ---
 
 ### 6. Exclusions
@@ -92,6 +104,9 @@ Granular rules preventing specific requests from being cached or served from cac
 - **Post IDs** — specific pages/posts never cached
 - **REST API routes** — exclude specific API namespaces
 - **RSS feeds** — toggle feed caching
+
+<img width="1748" height="904" alt="image" src="https://github.com/user-attachments/assets/095630b8-a04c-404d-8bf0-7e043633d638" />
+
 
 ---
 
@@ -108,6 +123,8 @@ Intelligent cache invalidation — each event toggled independently:
 - Widgets added / removed / updated
 - User logged in / logged out (private cache)
 
+<img width="1744" height="904" alt="image" src="https://github.com/user-attachments/assets/d2759780-7090-4939-aab7-4fe67eeadcb6" />
+
 ---
 
 ### 8. Logging
@@ -119,6 +136,9 @@ Debugging and monitoring centre. All cache operations (serve, miss, flush, prelo
 - **Live viewer** — terminal-style `<pre>` block (green-on-black) showing last 100 entries
 - **Actions**: Refresh, Download Log, Clear Log, Write Test Entry
 - **Metadata**: current log file size & total entry count
+
+<img width="1752" height="902" alt="image" src="https://github.com/user-attachments/assets/47900f70-e940-414a-9782-8eb1081e1f52" />
+
 
 ---
 
@@ -134,6 +154,9 @@ JavaScript performance tool applied **only to public cached pages**. Analyze a U
 - **Toolbar**: Filter by source/status, "Test in Browser", "Apply to Cache", "Reset All"
 - Auto-analyzes the site URL on page load if no test run yet
 
+<img width="1728" height="906" alt="image" src="https://github.com/user-attachments/assets/add45d7f-f280-4ba2-9920-f8d63c339c1d" />
+
+
 ---
 
 ### 10. Tools
@@ -145,6 +168,9 @@ Utility panel (no Save button — all panels are read-only or action-based):
 - **Preload Status** — live queue progress
 - **System Information** — PHP version, server, WordPress constants, disk free space
 - **Reset All Settings to Defaults** — restores every plugin option to default
+
+<img width="1742" height="900" alt="image" src="https://github.com/user-attachments/assets/4185873d-30c7-414f-bc1f-768630abe5b2" />
+
 
 ---
 
