@@ -6,11 +6,11 @@ Complete reference — all 10 admin tabs + the About page.
 
 ## Overview
 
-**WP Static Cache** is a dual-layer WordPress caching plugin that serves **disk-based public pages** to non-logged-in visitors and **fully isolated private pages** to authenticated users, keyed per `role_hash`. It features a smart **Stale-While-Revalidate (SWR)** preload system, **JavaScript optimization** for Core Web Vitals, granular **exclusion rules**, and automatic cache invalidation via **event-driven flush**.
+**WP Static Cache** is a dual-layer WordPress caching plugin that serves **disk-based public pages** to non-logged-in visitors and **fully isolated private pages** to authenticated users, keyed per `role_hash`. It features granular **exclusion rules**, automatic cache invalidation via **event-driven flush**, and **JavaScript optimization** for Core Web Vitals.
 
-The admin settings are organised into **11 views** (10 tabs + an About page). Each tab handles a distinct subsystem of the plugin, from the AJAX-driven Dashboard overview to the script-analysis tool in JS Optimization.
+Its standout feature is the **Stale-While-Revalidate (SWR) preload** — expired pages are served instantly to visitors while fresh content is regenerated in the background, giving **zero waiting time during cache rebuilds**. This sets it apart from most caching plugins that delete expired cache immediately, causing a performance spike on the next request.
 
-**Tab order** (registered in `class-wpsc-settings.php:23–32`): Dashboard → General → Public Cache → Private Cache → Preload → Exclusions → Auto Flush → Logging → JS Optimization → Tools.
+**Tab order** (registered in `class-wpsc-settings.php:23–32`): Dashboard → General → Public Cache → Private Cache → ⭐ **Preload** (USP) → Exclusions → Auto Flush → Logging → JS Optimization → Tools.
 
 ---
 
@@ -63,10 +63,12 @@ Per-user isolated cache for **logged-in users**. Keyed by `md5(roles|user_id)` s
 
 ---
 
-### 5. Preload
+### ⭐ 5. Preload
 `tab-preload.php`
 
-Background cache warmer with **Stale-While-Revalidate (SWR)**.
+> **Unique Selling Point** — This is the plugin's standout feature. Most caching plugins delete expired cache immediately, causing a performance spike on the next request. WP Static Cache serves the stale page instantly and regenerates in the background — zero waiting time during cache expiry.
+
+Background cache warmer with **Stale-While-Revalidate (SWR)**:
 
 - **Manual buttons**: "Preload Now" and "Stop Preload"
 - **Preload sources**: sitemap, post types, taxonomies, menu items, custom URLs
