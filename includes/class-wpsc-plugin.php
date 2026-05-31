@@ -15,7 +15,9 @@ class WPSC_Plugin {
     public function init() {
         WPSC_Settings::instance();
         require_once WPSC_INC_DIR . 'class-wpsc-js-optimizer.php';
+        require_once WPSC_INC_DIR . 'class-wpsc-image-optimizer.php';
         WPSC_JS_Optimizer::instance()->init_hooks();
+        WPSC_Image_Optimizer::instance()->init_hooks();
         WPSC_Cron::instance()->setup();
         WPSC_Cleanup::instance()->setup_hooks();
         if ( wpsc_is_public_cache_enabled() ) {
@@ -434,6 +436,159 @@ class WPSC_Plugin {
             case 'reset_defaults':
                 WPSC_Settings::instance()->update( WPSC_Settings::instance()->get_defaults() );
                 wp_send_json_success( __( 'All settings have been reset to defaults.', 'wp-static-cache' ) );
+                break;
+
+            case 'img_opt_get_stats':
+                try {
+                    require_once WPSC_INC_DIR . 'class-wpsc-image-optimizer.php';
+                    $stats = WPSC_Image_Optimizer::instance()->get_stats();
+                    wp_send_json_success( $stats );
+                } catch ( Throwable $e ) {
+                    wp_send_json_error( $e->getMessage() );
+                }
+                break;
+
+            case 'img_opt_scan':
+                try {
+                    require_once WPSC_INC_DIR . 'class-wpsc-image-optimizer.php';
+                    $result = WPSC_Image_Optimizer::instance()->scan_media();
+                    wp_send_json_success( $result );
+                } catch ( Throwable $e ) {
+                    wp_send_json_error( $e->getMessage() );
+                }
+                break;
+
+            case 'img_opt_convert_batch':
+                try {
+                    require_once WPSC_INC_DIR . 'class-wpsc-image-optimizer.php';
+                    $ids = isset( $_POST['ids'] ) ? json_decode( wp_unslash( $_POST['ids'] ), true ) : array();
+                    if ( empty( $ids ) || ! is_array( $ids ) ) {
+                        wp_send_json_error( __( 'No image IDs provided.', 'wp-static-cache' ) );
+                    }
+                    $result = WPSC_Image_Optimizer::instance()->convert_batch( $ids );
+                    wp_send_json_success( $result );
+                } catch ( Throwable $e ) {
+                    wp_send_json_error( $e->getMessage() );
+                }
+                break;
+
+            case 'img_opt_get_deletable':
+                try {
+                    require_once WPSC_INC_DIR . 'class-wpsc-image-optimizer.php';
+                    $result = WPSC_Image_Optimizer::instance()->get_deletable_ids();
+                    wp_send_json_success( $result );
+                } catch ( Throwable $e ) {
+                    wp_send_json_error( $e->getMessage() );
+                }
+                break;
+
+            case 'img_opt_delete_batch':
+                try {
+                    require_once WPSC_INC_DIR . 'class-wpsc-image-optimizer.php';
+                    $ids = isset( $_POST['ids'] ) ? json_decode( wp_unslash( $_POST['ids'] ), true ) : array();
+                    if ( empty( $ids ) || ! is_array( $ids ) ) {
+                        wp_send_json_error( __( 'No image IDs provided.', 'wp-static-cache' ) );
+                    }
+                    $result = WPSC_Image_Optimizer::instance()->delete_converted_batch( $ids );
+                    wp_send_json_success( $result );
+                } catch ( Throwable $e ) {
+                    wp_send_json_error( $e->getMessage() );
+                }
+                break;
+
+            case 'img_opt_get_thumb_sizes':
+                try {
+                    require_once WPSC_INC_DIR . 'class-wpsc-image-optimizer.php';
+                    $sizes = WPSC_Image_Optimizer::instance()->get_thumb_sizes();
+                    wp_send_json_success( $sizes );
+                } catch ( Throwable $e ) {
+                    wp_send_json_error( $e->getMessage() );
+                }
+                break;
+
+            case 'img_opt_save_thumb_size':
+                try {
+                    require_once WPSC_INC_DIR . 'class-wpsc-image-optimizer.php';
+                    $name = isset( $_POST['name'] ) ? sanitize_key( $_POST['name'] ) : '';
+                    $width = isset( $_POST['width'] ) ? max( 0, (int) $_POST['width'] ) : 0;
+                    $height = isset( $_POST['height'] ) ? max( 0, (int) $_POST['height'] ) : 0;
+                    $crop = ! empty( $_POST['crop'] );
+                    if ( empty( $name ) || ( $width <= 0 && $height <= 0 ) ) {
+                        wp_send_json_error( __( 'Invalid size parameters.', 'wp-static-cache' ) );
+                    }
+                    $sizes = WPSC_Image_Optimizer::instance()->get_thumb_sizes();
+                    $sizes[ $name ] = array( 'width' => $width, 'height' => $height, 'crop' => $crop );
+                    WPSC_Settings::instance()->update( array( 'img_opt_thumb_sizes' => $sizes ) );
+                    $built_in = array( 'thumbnail', 'medium', 'medium_large', 'large' );
+                    if ( in_array( $name, $built_in, true ) ) {
+                        $w = max( 1, $width );
+                        $h = max( 1, $height );
+                        update_option( "{$name}_size_w", $w );
+                        update_option( "{$name}_size_h", $h );
+                        if ( $name === 'thumbnail' ) {
+                            update_option( 'thumbnail_crop', $crop ? 1 : 0 );
+                        }
+                    }
+                    wp_send_json_success( array( 'message' => __( 'Thumbnail size saved.', 'wp-static-cache' ) ) );
+                } catch ( Throwable $e ) {
+                    wp_send_json_error( $e->getMessage() );
+                }
+                break;
+
+            case 'img_opt_add_thumb_size':
+                try {
+                    require_once WPSC_INC_DIR . 'class-wpsc-image-optimizer.php';
+                    $name = isset( $_POST['name'] ) ? sanitize_key( $_POST['name'] ) : '';
+                    $width = isset( $_POST['width'] ) ? max( 0, (int) $_POST['width'] ) : 0;
+                    $height = isset( $_POST['height'] ) ? max( 0, (int) $_POST['height'] ) : 0;
+                    $crop = ! empty( $_POST['crop'] );
+                    if ( empty( $name ) || strlen( $name ) < 2 || strlen( $name ) > 64 ) {
+                        wp_send_json_error( __( 'Size name must be 2-64 characters.', 'wp-static-cache' ) );
+                    }
+                    if ( ! preg_match( '/^[a-z0-9_\-]+$/', $name ) ) {
+                        wp_send_json_error( __( 'Size name may only contain lowercase letters, numbers, hyphens, and underscores.', 'wp-static-cache' ) );
+                    }
+                    if ( $width <= 0 && $height <= 0 ) {
+                        wp_send_json_error( __( 'Width or height must be greater than 0.', 'wp-static-cache' ) );
+                    }
+                    $sizes = WPSC_Image_Optimizer::instance()->get_thumb_sizes();
+                    if ( isset( $sizes[ $name ] ) ) {
+                        wp_send_json_error( __( 'A size with this name already exists.', 'wp-static-cache' ) );
+                    }
+                    $sizes[ $name ] = array( 'width' => $width, 'height' => $height, 'crop' => $crop );
+                    WPSC_Settings::instance()->update( array( 'img_opt_thumb_sizes' => $sizes ) );
+                    wp_send_json_success( array(
+                        'message' => sprintf( __( 'Size "%s" added.', 'wp-static-cache' ), esc_html( $name ) ),
+                        'name' => $name,
+                    ) );
+                } catch ( Throwable $e ) {
+                    wp_send_json_error( $e->getMessage() );
+                }
+                break;
+
+            case 'img_opt_delete_thumb_size':
+                try {
+                    require_once WPSC_INC_DIR . 'class-wpsc-image-optimizer.php';
+                    $name = isset( $_POST['name'] ) ? sanitize_key( $_POST['name'] ) : '';
+                    $built_in = array( 'thumbnail', 'medium', 'medium_large', 'large' );
+                    if ( in_array( $name, $built_in, true ) ) {
+                        wp_send_json_error( __( 'Built-in sizes cannot be deleted.', 'wp-static-cache' ) );
+                    }
+                    if ( empty( $name ) ) {
+                        wp_send_json_error( __( 'No size name provided.', 'wp-static-cache' ) );
+                    }
+                    $sizes = WPSC_Image_Optimizer::instance()->get_thumb_sizes();
+                    if ( ! isset( $sizes[ $name ] ) ) {
+                        wp_send_json_error( __( 'Size not found.', 'wp-static-cache' ) );
+                    }
+                    unset( $sizes[ $name ] );
+                    WPSC_Settings::instance()->update( array( 'img_opt_thumb_sizes' => $sizes ) );
+                    wp_send_json_success( array(
+                        'message' => sprintf( __( 'Size "%s" deleted.', 'wp-static-cache' ), esc_html( $name ) ),
+                    ) );
+                } catch ( Throwable $e ) {
+                    wp_send_json_error( $e->getMessage() );
+                }
                 break;
 
             case 'get_nginx_config':

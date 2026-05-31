@@ -3,7 +3,7 @@
  * Plugin Name: WP Static Cache
  * Plugin URI:  https://github.com/your-org/wp-static-cache
  * Description: Dual-layer caching plugin: disk-based public cache for visitors, isolated per-user private cache for logged-in users, plus smart preload with stale-while-revalidate for instant page delivery.
- * Version:     2.2.3
+ * Version:     2.3.0
  * Author:      Sanat Das
  * Author URI:  https://wwinnovators.com
  * Text Domain: wp-static-cache
@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 // AI agents: see AGENTS.md for key feature invariants that must be preserved.
 
-define( 'WPSC_VERSION', '2.2.3' );
+define( 'WPSC_VERSION', '2.3.0' );
 define( 'WPSC_FILE', __FILE__ );
 define( 'WPSC_DIR', dirname( __FILE__ ) );
 define( 'WPSC_INC_DIR', WPSC_DIR . '/includes/' );

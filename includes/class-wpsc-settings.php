@@ -29,6 +29,7 @@ class WPSC_Settings {
         $this->register_tab( "auto-flush", __( "Auto Flush", "wp-static-cache" ) );
         $this->register_tab( "logging", __( "Logging", "wp-static-cache" ) );
         $this->register_tab( "js-optimization", __( "JS Optimization", "wp-static-cache" ) );
+        $this->register_tab( "image-optimization", __( "Image Optimization", "wp-static-cache" ) );
         $this->register_tab( "tools", __( "Tools", "wp-static-cache" ) );
 
         $this->add_fields( "general", array(
@@ -113,6 +114,19 @@ class WPSC_Settings {
             "js_defer_include" => array( "type" => "textarea", "label" => "Defer List", "desc" => "Scripts to defer (add defer attribute).", "default" => "" ),
             "js_delay_include" => array( "type" => "textarea", "label" => "Delay List", "desc" => "Scripts to delay until user interaction.", "default" => "" ),
             "js_delay_timeout" => array( "type" => "number", "label" => "Delay Timeout (seconds)", "desc" => "Timeout before delayed scripts load automatically (1-120).", "default" => 5, "attrs" => array( "min" => 1, "max" => 120 ) ),
+        ) );
+
+        $this->add_fields( "image-optimization", array(
+            "img_opt_enabled" => array( "type" => "toggle", "label" => "Enable Image Optimization", "desc" => "Generate and serve modern image formats (WebP/AVIF) to supported browsers for public cached pages. Converted files are stored alongside originals in the uploads directory.", "default" => false ),
+            "img_opt_webp" => array( "type" => "toggle", "label" => "Generate WebP", "desc" => "Create WebP versions of JPEG, PNG, and GIF images.", "default" => true ),
+            "img_opt_avif" => array( "type" => "toggle", "label" => "Generate AVIF", "desc" => "Create AVIF versions (requires PHP 8.1+).", "default" => false ),
+            "img_opt_webp_quality" => array( "type" => "number", "label" => "WebP Quality", "desc" => "Quality for WebP conversion (1-100).", "default" => 82, "attrs" => array( "min" => 1, "max" => 100 ) ),
+            "img_opt_avif_quality" => array( "type" => "number", "label" => "AVIF Quality", "desc" => "Quality for AVIF conversion (1-100).", "default" => 80, "attrs" => array( "min" => 1, "max" => 100 ) ),
+            "img_opt_max_width" => array( "type" => "number", "label" => "Max Image Width (px)", "desc" => "Images wider than this will be resized before optimization. 0 = unlimited.", "default" => 2560, "attrs" => array( "min" => 0, "max" => 10000 ) ),
+            "img_opt_max_height" => array( "type" => "number", "label" => "Max Image Height (px)", "desc" => "Images taller than this will be resized before optimization. 0 = unlimited.", "default" => 2560, "attrs" => array( "min" => 0, "max" => 10000 ) ),
+            "img_opt_thumb_sizes" => array( "type" => "thumb_sizes", "label" => "Thumbnail Sizes", "desc" => "Custom thumbnail sizes managed via the Thumbnail Sizes section below.", "default" => array() ),
+            "img_opt_max_per_run" => array( "type" => "number", "label" => "Max Images Per Run", "desc" => "Maximum number of most recently uploaded images to process per Optimize All run.", "default" => 100, "attrs" => array( "min" => 1, "max" => 9999 ) ),
+            "img_opt_skip_classes" => array( "type" => "multi-text", "label" => "Skip CSS Classes", "desc" => "Image with any of these CSS classes will be skipped (comma-separated).", "default" => "skip-lazy, nopin, no-webp" ),
         ) );
 
         $this->add_fields( "logging", array(
@@ -201,6 +215,23 @@ class WPSC_Settings {
                 return array_map( "trim", $parts );
             case "checkbox_group": return is_array( $value ) ? $value : array();
             case "textarea": return sanitize_textarea_field( $value );
+            case "thumb_sizes":
+                if ( ! is_array( $value ) ) {
+                    return array();
+                }
+                $clean = array();
+                foreach ( $value as $name => $dim ) {
+                    $name = sanitize_key( $name );
+                    if ( empty( $name ) ) {
+                        continue;
+                    }
+                    $clean[ $name ] = array(
+                        'width'  => isset( $dim['width'] ) ? max( 0, (int) $dim['width'] ) : 0,
+                        'height' => isset( $dim['height'] ) ? max( 0, (int) $dim['height'] ) : 0,
+                        'crop'   => ! empty( $dim['crop'] ),
+                    );
+                }
+                return $clean;
             default: return sanitize_text_field( $value );
         }
     }
@@ -299,6 +330,18 @@ class WPSC_Settings {
                 'js_delay_include' => 'Test Tool',
                 'js_delay_timeout' => 'Test Tool',
             ),
+            'image-optimization' => array(
+                'img_opt_enabled' => 'General',
+                'img_opt_webp' => 'Formats',
+                'img_opt_avif' => 'Formats',
+                'img_opt_webp_quality' => 'Quality',
+                'img_opt_avif_quality' => 'Quality',
+                'img_opt_max_width' => 'Resizing',
+                'img_opt_max_height' => 'Resizing',
+                'img_opt_thumb_sizes' => null,
+                'img_opt_max_per_run' => 'Bulk Optimizer',
+                'img_opt_skip_classes' => 'Bulk Optimizer',
+            ),
             'logging' => array(
                 'logging_enabled' => 'Log Settings',
                 'log_level' => 'Log Settings',
@@ -331,6 +374,9 @@ class WPSC_Settings {
             }
             $value = isset( $settings[ $key ] ) ? $settings[ $key ] : ( isset( $def["default"] ) ? $def["default"] : "" );
             $desc = isset( $def["desc"] ) ? $def["desc"] : "";
+            if ( $def["type"] === "thumb_sizes" ) {
+                continue;
+            }
             ?>
             <tr>
                 <th scope="row"><label for="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $def["label"] ); ?></label></th>
@@ -405,6 +451,8 @@ class WPSC_Settings {
                                 <p class="description"><?php esc_html_e( 'Loading...', 'wp-static-cache' ); ?></p>
                             </div>
                             <?php
+                            break;
+                        case "thumb_sizes":
                             break;
                     }
                     if ( $desc ) {

@@ -48,6 +48,7 @@ class WPSC_Public_Cache {
             return $buffer;
         }
         $buffer = WPSC_JS_Optimizer::instance()->process_html( $buffer );
+        $buffer = WPSC_Image_Optimizer::instance()->process_html( $buffer );
         $cache_version = $this->settings->get( 'cache_version', '1.0' );
         if ( ! empty( $cache_version ) ) {
             $buffer = preg_replace(
