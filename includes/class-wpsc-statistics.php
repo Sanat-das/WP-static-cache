@@ -38,9 +38,16 @@ class WPSC_Statistics {
                 $meta_path = dirname( $file->getPathname() ) . '/.meta.json';
                 if ( file_exists( $meta_path ) ) {
                     $meta = json_decode( file_get_contents( $meta_path ), true );
-                    if ( $meta && isset( $meta['page_type'] ) && isset( $stats['by_type'][ $meta['page_type'] ] ) ) {
-                        $stats['by_type'][ $meta['page_type'] ]++;
-                        if ( $meta['page_type'] === 'archive' && isset( $meta['uri'] ) ) {
+                    if ( $meta && isset( $meta['page_type'] ) ) {
+                        $pt = $meta['page_type'];
+                        if ( isset( $stats['by_type'][ $pt ] ) ) {
+                            $stats['by_type'][ $pt ]++;
+                        } elseif ( strpos( $pt, 'taxonomy:' ) === 0 ) {
+                            $stats['by_type']['archive']++;
+                        } else {
+                            $stats['by_type']['other']++;
+                        }
+                        if ( ( $pt === 'archive' || strpos( $pt, 'taxonomy:' ) === 0 ) && isset( $meta['uri'] ) ) {
                             $base = preg_replace( '#/page/\d+/?#', '', $meta['uri'] );
                             $archive_bases[ $base ] = true;
                         }
@@ -57,9 +64,8 @@ class WPSC_Statistics {
     }
 
     public static function get_preload_status() {
-        $queue = get_option( 'wpsc_preload_queue', array() );
         return array(
-            'queue_size'   => is_array( $queue ) ? count( $queue ) : 0,
+            'queue_size'   => WPSC_Preload::instance()->get_queue_size(),
             'last_run'     => get_option( 'wpsc_preload_last_run', 0 ),
             'is_running'   => WPSC_Preload::instance()->is_running(),
         );

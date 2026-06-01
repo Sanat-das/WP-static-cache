@@ -255,7 +255,7 @@ class WPSC_Plugin {
                 if ( $url ) {
                     WPSC_Public_Cache::flush_url( $url, true );
                     WPSC_Private_Cache::instance()->flush_url( $url );
-                    WPSC_Preload::instance()->queue_urls( array( $url ) );
+                    WPSC_Preload::instance()->queue_urls( array( $url ), true );
                     wp_send_json_success( __( 'URL flushed.', 'wp-static-cache' ) );
                 }
                 wp_send_json_error( __( 'No URL provided.', 'wp-static-cache' ) );

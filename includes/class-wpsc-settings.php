@@ -256,6 +256,7 @@ class WPSC_Settings {
                 'private_cache_enabled' => 'Cache Mode',
                 'homepage_ttl' => 'Cache Duration',
                 'taxonomy_ttl' => 'Cache Duration',
+                '_taxonomy_ttl_heading' => 'Cache Duration',
                 'single_post_ttl' => 'Cache Duration',
                 'other_ttl' => 'Cache Duration',
                 'cache_dir' => 'Storage',
@@ -360,6 +361,9 @@ class WPSC_Settings {
                 }
             }
             $section = isset( $section_map[ $tab ][ $key ] ) ? $section_map[ $tab ][ $key ] : null;
+            if ( $section === null && strpos( $key, 'taxonomy_ttl_' ) === 0 ) {
+                $section = 'Cache Duration';
+            }
             if ( $section !== $current_section ) {
                 if ( $table_open ) {
                     echo '</table>';
@@ -375,6 +379,16 @@ class WPSC_Settings {
             $value = isset( $settings[ $key ] ) ? $settings[ $key ] : ( isset( $def["default"] ) ? $def["default"] : "" );
             $desc = isset( $def["desc"] ) ? $def["desc"] : "";
             if ( $def["type"] === "thumb_sizes" ) {
+                continue;
+            }
+            if ( $def["type"] === "subheading" ) {
+                ?>
+                <tr class="wpsc-subheading-row">
+                    <th scope="row" colspan="2">
+                        <h4 style="margin:16px 0 4px;color:#50575e;"><?php echo esc_html( $def["label"] ); ?></h4>
+                    </th>
+                </tr>
+                <?php
                 continue;
             }
             ?>
@@ -484,6 +498,37 @@ class WPSC_Settings {
             }
             $this->fields['preload']['preload_taxonomies']['options'] = $options;
             $this->fields['preload']['preload_taxonomies']['default'] = array( 'category' );
+        }
+        if ( isset( $this->fields['general'] ) ) {
+            $taxes = get_taxonomies( array( 'public' => true ), 'objects' );
+            $global_ttl = $this->get( 'taxonomy_ttl', 60 );
+            $injected = array();
+            $inserted = false;
+            foreach ( $this->fields['general'] as $key => $def ) {
+                $injected[ $key ] = $def;
+                if ( $key === 'taxonomy_ttl' && ! empty( $taxes ) ) {
+                    $injected['_taxonomy_ttl_heading'] = array(
+                        'type'  => 'subheading',
+                        'label' => __( 'Per-Taxonomy TTL', 'wp-static-cache' ),
+                    );
+                    foreach ( $taxes as $tax ) {
+                        $k = 'taxonomy_ttl_' . $tax->name;
+                        if ( ! isset( $injected[ $k ] ) ) {
+                            $injected[ $k ] = array(
+                                'type'    => 'number',
+                                'label'   => sprintf( __( '%s TTL (minutes)', 'wp-static-cache' ), $tax->label ),
+                                'desc'    => sprintf( __( 'Leave empty to inherit global Taxonomy TTL (%d min).', 'wp-static-cache' ), $global_ttl ),
+                                'default' => '',
+                                'attrs'   => array( 'min' => 0, 'max' => 525600 ),
+                            );
+                        }
+                    }
+                    $inserted = true;
+                }
+            }
+            if ( $inserted ) {
+                $this->fields['general'] = $injected;
+            }
         }
         if ( isset( $this->fields['js-optimization']['js_test_url'] ) ) {
             $this->fields['js-optimization']['js_test_url']['default'] = home_url( '/' );

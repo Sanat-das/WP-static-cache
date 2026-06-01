@@ -222,7 +222,7 @@ class WPSC_Cleanup {
             WPSC_Logger::info( 'Post invalidated', array( 'post_id' => $post->ID, 'post_type' => $post->post_type ) );
         }
 
-        WPSC_Preload::instance()->queue_urls( $urls );
+        WPSC_Preload::instance()->queue_urls( $urls, true );
     }
 
 }

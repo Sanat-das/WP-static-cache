@@ -5,6 +5,7 @@ class WPSC_Preload {
     private static $instance = null;
     private $settings;
     private $queue_key = 'wpsc_preload_queue';
+    private $priority_queue_key = 'wpsc_preload_queue_priority';
     private $slots_key = 'wpsc_preload_slots';
     private $force_key = 'wpsc_preload_force';
 
@@ -42,6 +43,17 @@ class WPSC_Preload {
 
         $force = $force || get_transient( $this->force_key );
 
+        // Drain priority queue first (post events, manual flush).
+        $pqueue = get_option( $this->priority_queue_key, array() );
+        if ( ! is_array( $pqueue ) ) {
+            $pqueue = array();
+        }
+        if ( ! empty( $pqueue ) ) {
+            $this->process_queue( $this->priority_queue_key, $pqueue, $force );
+            return;
+        }
+
+        // Fall back to main queue.
         $queue = get_option( $this->queue_key, array() );
         if ( ! is_array( $queue ) ) {
             $queue = array();
@@ -56,6 +68,10 @@ class WPSC_Preload {
             update_option( $this->queue_key, $queue, false );
         }
 
+        $this->process_queue( $this->queue_key, $queue, $force );
+    }
+
+    private function process_queue( $key, $queue, $force ) {
         if ( ! $this->acquire_slot() ) {
             return;
         }
@@ -84,14 +100,16 @@ class WPSC_Preload {
         }
 
         if ( ! empty( $failed ) ) {
-            update_option( $this->queue_key, $failed, false );
+            update_option( $key, $failed, false );
             $this->schedule_next_batch();
-            WPSC_Logger::debug( 'Preload batch processed with queue pending', array( 'processed' => count( $batch ), 'remaining' => count( $failed ) ) );
+            WPSC_Logger::debug( 'Preload batch processed with queue pending', array( 'queue_key' => $key, 'processed' => count( $batch ), 'remaining' => count( $failed ) ) );
         } else {
-            delete_option( $this->queue_key );
-            delete_transient( $this->force_key );
+            delete_option( $key );
+            if ( $key === $this->queue_key ) {
+                delete_transient( $this->force_key );
+            }
             update_option( 'wpsc_preload_last_run', time() );
-            WPSC_Logger::info( 'Preload queue completed' );
+            WPSC_Logger::info( 'Preload queue completed', array( 'queue_key' => $key ) );
         }
 
         $this->release_slot();
@@ -361,30 +379,33 @@ class WPSC_Preload {
 
     public function stop() {
         delete_option( $this->queue_key );
+        delete_option( $this->priority_queue_key );
         delete_transient( $this->slots_key );
         delete_transient( $this->force_key );
         $cron = wp_next_scheduled( 'wpsc_preload_batch' );
         if ( $cron ) { wp_unschedule_event( $cron, 'wpsc_preload_batch' ); }
     }
 
-    public function queue_urls( $urls ) {
+    public function queue_urls( $urls, $priority = false ) {
         if ( empty( $urls ) ) { return; }
         if ( ! $this->settings->get( 'preload_enabled', false ) ) { return; }
-        $queue = get_option( $this->queue_key, array() );
+        $key = $priority ? $this->priority_queue_key : $this->queue_key;
+        $queue = get_option( $key, array() );
         if ( ! is_array( $queue ) ) { $queue = array(); }
         foreach ( (array) $urls as $url ) {
             if ( ! in_array( $url, $queue, true ) ) {
                 $queue[] = $url;
             }
         }
-        update_option( $this->queue_key, $queue, false );
+        update_option( $key, $queue, false );
         $this->schedule_next_batch();
-        WPSC_Logger::debug( 'URLs queued for preload', array( 'count' => count( (array) $urls ) ) );
+        WPSC_Logger::debug( 'URLs queued for preload', array( 'count' => count( (array) $urls ), 'priority' => $priority ) );
     }
 
     public function get_queue_size() {
         $queue = get_option( $this->queue_key, array() );
-        return is_array( $queue ) ? count( $queue ) : 0;
+        $pqueue = get_option( $this->priority_queue_key, array() );
+        return ( is_array( $queue ) ? count( $queue ) : 0 ) + ( is_array( $pqueue ) ? count( $pqueue ) : 0 );
     }
 
     public function is_running() {
