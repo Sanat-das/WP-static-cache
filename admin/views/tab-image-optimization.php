@@ -2,8 +2,9 @@
 $opt = WPSC_Image_Optimizer::instance();
 $engine = $opt->get_engine();
 ?>
-<div class="wpsc-status-panel" id="wpsc-img-opt-status" style="margin-bottom:16px;">
-    <table>
+<div class="wpsc-section-group">
+    <h3 class="wpsc-section-title"><?php esc_html_e( 'System Info', 'wp-static-cache' ); ?></h3>
+    <table class="form-table">
         <tr><td><?php esc_html_e( 'Engine', 'wp-static-cache' ); ?></td><td><strong><?php echo esc_html( ucfirst( $engine ) ); ?></strong></td></tr>
         <tr><td><?php esc_html_e( 'WebP Support', 'wp-static-cache' ); ?></td><td><span class="wpsc-dash-status-badge <?php echo $opt->has_webp_support() ? 'active' : 'inactive'; ?>"><?php echo $opt->has_webp_support() ? 'Available' : 'Not available'; ?></span></td></tr>
         <tr><td><?php esc_html_e( 'AVIF Support', 'wp-static-cache' ); ?></td><td><span class="wpsc-dash-status-badge <?php echo $opt->has_avif_support() ? 'active' : 'inactive'; ?>"><?php echo $opt->has_avif_support() ? 'Available' : 'Not available'; ?></span></td></tr>
@@ -11,16 +12,50 @@ $engine = $opt->get_engine();
     </table>
 </div>
 
+<?php
+$img_fields = WPSC_Settings::instance()->get_fields( 'image-optimization' );
+$bulk_field_keys = array( 'img_opt_max_per_run', 'img_opt_skip_classes' );
+$form_fields = array_diff_key( $img_fields, array_flip( $bulk_field_keys ) );
+?>
 <form method="post" action="options.php">
     <?php
     settings_fields( 'wpsc_settings' );
-    WPSC_Settings::instance()->render_fields( WPSC_Settings::instance()->get_fields( 'image-optimization' ) );
+    WPSC_Settings::instance()->render_fields( $form_fields );
     submit_button();
     ?>
 </form>
 
-<div class="wpsc-test-url-section">
-    <h2><?php esc_html_e( 'Bulk Optimizer', 'wp-static-cache' ); ?></h2>
+<div class="wpsc-section-group">
+    <h3 class="wpsc-section-title"><?php esc_html_e( 'Bulk Optimizer', 'wp-static-cache' ); ?></h3>
+
+    <?php
+    $settings = WPSC_Settings::instance()->get_all();
+    ?>
+    <table class="form-table">
+    <?php foreach ( $bulk_field_keys as $k ) :
+        $def = $img_fields[ $k ];
+        $value = isset( $settings[ $k ] ) ? $settings[ $k ] : ( $def['default'] ?? '' );
+        $desc = $def['desc'] ?? '';
+    ?>
+        <tr>
+            <th scope="row"><label for="<?php echo esc_attr( $k ); ?>"><?php echo esc_html( $def['label'] ); ?></label></th>
+            <td>
+                <?php if ( $def['type'] === 'number' ) : ?>
+                    <input type="number" name="<?php echo esc_attr( WPSC_SETTINGS_KEY ); ?>[<?php echo esc_attr( $k ); ?>]" id="<?php echo esc_attr( $k ); ?>" value="<?php echo esc_attr( $value ); ?>" class="small-text" <?php
+                        foreach ( ( $def['attrs'] ?? array() ) as $attr => $v ) {
+                            echo esc_attr( $attr ) . '="' . esc_attr( $v ) . '" ';
+                        }
+                    ?>/>
+                <?php else : ?>
+                    <input type="text" name="<?php echo esc_attr( WPSC_SETTINGS_KEY ); ?>[<?php echo esc_attr( $k ); ?>]" id="<?php echo esc_attr( $k ); ?>" value="<?php echo esc_attr( is_array( $value ) ? implode( ', ', $value ) : $value ); ?>" class="regular-text" />
+                <?php endif; ?>
+                <?php if ( $desc ) : ?>
+                    <p class="description"><?php echo esc_html( $desc ); ?></p>
+                <?php endif; ?>
+            </td>
+        </tr>
+    <?php endforeach; ?>
+    </table>
 
     <div id="wpsc-img-opt-summary" style="margin-bottom:12px;">
         <span class="description"><?php esc_html_e( 'Scan your media library to find unconverted images.', 'wp-static-cache' ); ?></span>

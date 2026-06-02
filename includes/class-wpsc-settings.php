@@ -21,9 +21,7 @@ class WPSC_Settings {
 
     private function register_defaults() {
         $this->register_tab( "dashboard", __( "Dashboard", "wp-static-cache" ) );
-        $this->register_tab( "general", __( "General", "wp-static-cache" ) );
-        $this->register_tab( "public-cache", __( "Public Cache", "wp-static-cache" ) );
-        $this->register_tab( "private-cache", __( "Private Cache", "wp-static-cache" ) );
+        $this->register_tab( "cache", __( "Cache", "wp-static-cache" ) );
         $this->register_tab( "preload", __( "Preload", "wp-static-cache" ) );
         $this->register_tab( "exclusions", __( "Exclusions", "wp-static-cache" ) );
         $this->register_tab( "auto-flush", __( "Auto Flush", "wp-static-cache" ) );
@@ -32,31 +30,25 @@ class WPSC_Settings {
         $this->register_tab( "image-optimization", __( "Image Optimization", "wp-static-cache" ) );
         $this->register_tab( "tools", __( "Tools", "wp-static-cache" ) );
 
-        $this->add_fields( "general", array(
+        $this->add_fields( "cache", array(
             "public_cache_enabled" => array( "type" => "toggle", "label" => "Public Cache", "desc" => "Enable disk-based page caching for visitors.", "default" => true ),
             "private_cache_enabled" => array( "type" => "toggle", "label" => "Private Cache", "desc" => "Enable full-page caching for logged-in users. Uses disk storage with optional wp_cache_* front tier.", "default" => false ),
             "homepage_ttl" => array( "type" => "number", "label" => "Homepage TTL (minutes)", "desc" => "Cache lifetime for homepage. 0 = never expire.", "default" => 60, "attrs" => array( "min" => 0, "max" => 525600 ) ),
             "taxonomy_ttl" => array( "type" => "number", "label" => "Taxonomy TTL (minutes)", "desc" => "Cache lifetime for archives.", "default" => 60, "attrs" => array( "min" => 0, "max" => 525600 ) ),
             "single_post_ttl" => array( "type" => "number", "label" => "Single Post TTL (minutes)", "desc" => "0 = never expire (invalidated only on update).", "default" => 0, "attrs" => array( "min" => 0, "max" => 525600 ) ),
             "other_ttl" => array( "type" => "number", "label" => "Other Pages TTL (minutes)", "desc" => "Cache lifetime for other page types.", "default" => 60, "attrs" => array( "min" => 0, "max" => 525600 ) ),
-            "cache_dir" => array( "type" => "text", "label" => "Cache Directory", "desc" => "Absolute path for cache storage.", "default" => WP_CONTENT_DIR . "/cache/wp-static-cache/" ),
-            "delete_on_deactivate" => array( "type" => "toggle", "label" => "Delete on Deactivation", "desc" => "Remove all cache files on deactivation.", "default" => true ),
-            "cache_version" => array( "type" => "text", "label" => "Cache Version", "desc" => "Change to globally invalidate all cached pages.", "default" => "1.0" ),
-        ) );
-
-        $this->add_fields( "public-cache", array(
+            "pc_ttl_private_pages" => array( "type" => "number", "label" => "Private Page TTL (seconds)", "desc" => "How long a private page stays cached. 0 = never expire. Applied per user-role group.", "default" => 300, "attrs" => array( "min" => 0, "max" => 86400 ) ),
             "cacheable_qs" => array( "type" => "multi-text", "label" => "Cacheable Query Strings", "desc" => "Comma-separated.", "default" => "utm_source, utm_medium, utm_campaign, utm_term, utm_content, gclid, fbclid" ),
             "rejected_qs" => array( "type" => "multi-text", "label" => "Rejected Query Strings", "desc" => "Bypass cache if any of these params exist.", "default" => "nocache, preview, embed, elementor-preview" ),
             "cache_control_enabled" => array( "type" => "toggle", "label" => "Cache-Control Headers", "default" => true ),
             "cache_control_maxage" => array( "type" => "number", "label" => "Max-Age (seconds)", "default" => 3600, "attrs" => array( "min" => 0, "max" => 86400 ) ),
             "swr_window" => array( "type" => "number", "label" => "SWR Window (seconds)", "desc" => "Serve stale while regenerating.", "default" => 300, "attrs" => array( "min" => 0, "max" => 86400 ) ),
+            "serve_method" => array( "type" => "select", "label" => "Serving Method", "default" => "php", "options" => array( "php"=>"PHP (drop-in)", "htaccess"=>".htaccess", "nginx"=>"Nginx" ) ),
             "max_cache_file_size" => array( "type" => "number", "label" => "Max File Size (KB)", "desc" => "Pages larger than this are not cached.", "default" => 5120, "attrs" => array( "min" => 0, "max" => 102400 ) ),
             "max_cache_age" => array( "type" => "number", "label" => "Max Cache Age (days)", "desc" => "Automatically delete cached files older than this. 0 = disabled.", "default" => 0, "attrs" => array( "min" => 0, "max" => 365 ) ),
-            "serve_method" => array( "type" => "select", "label" => "Serving Method", "default" => "php", "options" => array( "php"=>"PHP (drop-in)", "htaccess"=>".htaccess", "nginx"=>"Nginx" ) ),
-
-        ) );
-        $this->add_fields( "private-cache", array(
-            "pc_ttl_private_pages" => array( "type" => "number", "label" => "Private Page TTL (seconds)", "desc" => "How long a private page stays cached. 0 = never expire. Applied per user-role group.", "default" => 300, "attrs" => array( "min" => 0, "max" => 86400 ) ),
+            "cache_dir" => array( "type" => "text", "label" => "Cache Directory", "desc" => "Absolute path for cache storage.", "default" => WP_CONTENT_DIR . "/cache/wp-static-cache/" ),
+            "cache_version" => array( "type" => "text", "label" => "Cache Version", "desc" => "Change to globally invalidate all cached pages.", "default" => "1.0" ),
+            "delete_on_deactivate" => array( "type" => "toggle", "label" => "Delete on Deactivation", "desc" => "Remove all cache files on deactivation.", "default" => true ),
         ) );
 
         $this->add_fields( "preload", array(
@@ -252,19 +244,15 @@ class WPSC_Settings {
     public function render_fields( $fields ) {
         $settings = $this->get_all();
         $section_map = array(
-            'general' => array(
+            'cache' => array(
                 'public_cache_enabled' => 'Cache Mode',
                 'private_cache_enabled' => 'Cache Mode',
+                'pc_ttl_private_pages' => 'Cache Duration',
                 'homepage_ttl' => 'Cache Duration',
                 'taxonomy_ttl' => 'Cache Duration',
                 '_taxonomy_ttl_heading' => 'Cache Duration',
                 'single_post_ttl' => 'Cache Duration',
                 'other_ttl' => 'Cache Duration',
-                'cache_dir' => 'Storage',
-                'cache_version' => 'Storage',
-                'delete_on_deactivate' => 'Cleanup',
-            ),
-            'public-cache' => array(
                 'cache_control_enabled' => 'Delivery',
                 'cache_control_maxage' => 'Delivery',
                 'swr_window' => 'Delivery',
@@ -273,10 +261,9 @@ class WPSC_Settings {
                 'rejected_qs' => 'Query Strings',
                 'max_cache_file_size' => 'Limits',
                 'max_cache_age' => 'Limits',
-
-            ),
-            'private-cache' => array(
-                'pc_ttl_private_pages' => 'Duration',
+                'cache_dir' => 'Storage',
+                'cache_version' => 'Storage',
+                'delete_on_deactivate' => 'Cleanup',
             ),
             'preload' => array(
                 'preload_enabled' => 'Schedule',
@@ -286,21 +273,21 @@ class WPSC_Settings {
                 'preload_max_urls' => 'Schedule',
                 'preload_timeout' => 'Schedule',
                 'preload_max_concurrent' => 'Schedule',
-                'preload_include_homepage' => 'Homepage',
-                'preload_include_posts' => 'Content',
-                'preload_post_count' => 'Content',
-                'preload_include_pages' => 'Content',
-                'preload_page_count' => 'Content',
-                'preload_post_types' => 'Content',
-                'preload_include_taxonomies' => 'Archives',
-                'preload_taxonomies' => 'Archives',
-                'preload_max_terms' => 'Archives',
-                'preload_max_archive_pages' => 'Archives',
-                'preload_include_date_archives' => 'Archives',
-                'preload_date_archive_months' => 'Archives',
-                'preload_include_author_archives' => 'Archives',
-                'preload_include_menus' => 'Menus',
-                'preload_custom_urls' => 'Custom URLs',
+                'preload_include_homepage' => 'Manual Preload Actions',
+                'preload_include_posts' => 'Manual Preload Actions',
+                'preload_post_count' => 'Manual Preload Actions',
+                'preload_include_pages' => 'Manual Preload Actions',
+                'preload_page_count' => 'Manual Preload Actions',
+                'preload_post_types' => 'Manual Preload Actions',
+                'preload_include_taxonomies' => 'Manual Preload Actions',
+                'preload_taxonomies' => 'Manual Preload Actions',
+                'preload_max_terms' => 'Manual Preload Actions',
+                'preload_max_archive_pages' => 'Manual Preload Actions',
+                'preload_include_date_archives' => 'Manual Preload Actions',
+                'preload_date_archive_months' => 'Manual Preload Actions',
+                'preload_include_author_archives' => 'Manual Preload Actions',
+                'preload_include_menus' => 'Manual Preload Actions',
+                'preload_custom_urls' => 'Manual Preload Actions',
                 'preload_user_agent' => 'Settings',
             ),
             'exclusions' => array(
@@ -342,14 +329,24 @@ class WPSC_Settings {
                 'img_opt_max_width' => 'Resizing',
                 'img_opt_max_height' => 'Resizing',
                 'img_opt_thumb_sizes' => null,
-                'img_opt_max_per_run' => 'Bulk Optimizer',
-                'img_opt_skip_classes' => 'Bulk Optimizer',
+                'img_opt_max_per_run' => 'General',
+                'img_opt_skip_classes' => 'General',
             ),
             'logging' => array(
                 'logging_enabled' => 'Log Settings',
                 'log_level' => 'Log Settings',
                 'log_max_size' => 'Log Settings',
                 'log_cleanup_days' => 'Log Settings',
+            ),
+            'tools' => array(
+                'flush_public' => 'Cache Actions',
+                'flush_private' => 'Cache Actions',
+                'flush_all' => 'Cache Actions',
+                'flush_expired' => 'Cache Actions',
+                'reset_defaults' => 'Settings',
+                'cache_stats' => 'Information',
+                'preload_status' => 'Information',
+                'system_info' => 'Information',
             ),
         );
         $current_section = null;
@@ -369,10 +366,14 @@ class WPSC_Settings {
             if ( $section !== $current_section ) {
                 if ( $table_open ) {
                     echo '</table>';
+                    if ( $current_section ) {
+                        echo '</div>';
+                    }
                     $table_open = false;
                 }
                 $current_section = $section;
                 if ( $section ) {
+                    echo '<div class="wpsc-section-group">';
                     echo '<h3 class="wpsc-section-title">' . esc_html( $section ) . '</h3>';
                 }
                 echo '<table class="form-table' . ( $section ? ' wpsc-section' : '' ) . '">';
@@ -481,6 +482,9 @@ class WPSC_Settings {
         }
         if ( $table_open ) {
             echo '</table>';
+            if ( $current_section ) {
+                echo '</div>';
+            }
         }
     }
     private function populate_dynamic_field_options() {
@@ -501,12 +505,12 @@ class WPSC_Settings {
             $this->fields['preload']['preload_taxonomies']['options'] = $options;
             $this->fields['preload']['preload_taxonomies']['default'] = array( 'category' );
         }
-        if ( isset( $this->fields['general'] ) ) {
+        if ( isset( $this->fields['cache'] ) ) {
             $taxes = get_taxonomies( array( 'public' => true ), 'objects' );
             $global_ttl = $this->get( 'taxonomy_ttl', 60 );
             $injected = array();
             $inserted = false;
-            foreach ( $this->fields['general'] as $key => $def ) {
+            foreach ( $this->fields['cache'] as $key => $def ) {
                 $injected[ $key ] = $def;
                 if ( $key === 'taxonomy_ttl' && ! empty( $taxes ) ) {
                     $injected['_taxonomy_ttl_heading'] = array(
@@ -529,7 +533,7 @@ class WPSC_Settings {
                 }
             }
             if ( $inserted ) {
-                $this->fields['general'] = $injected;
+                $this->fields['cache'] = $injected;
             }
         }
         if ( isset( $this->fields['js-optimization']['js_test_url'] ) ) {
