@@ -51,6 +51,7 @@ class WPSC_Settings {
             "cache_control_maxage" => array( "type" => "number", "label" => "Max-Age (seconds)", "default" => 3600, "attrs" => array( "min" => 0, "max" => 86400 ) ),
             "swr_window" => array( "type" => "number", "label" => "SWR Window (seconds)", "desc" => "Serve stale while regenerating.", "default" => 300, "attrs" => array( "min" => 0, "max" => 86400 ) ),
             "max_cache_file_size" => array( "type" => "number", "label" => "Max File Size (KB)", "desc" => "Pages larger than this are not cached.", "default" => 5120, "attrs" => array( "min" => 0, "max" => 102400 ) ),
+            "max_cache_age" => array( "type" => "number", "label" => "Max Cache Age (days)", "desc" => "Automatically delete cached files older than this. 0 = disabled.", "default" => 0, "attrs" => array( "min" => 0, "max" => 365 ) ),
             "serve_method" => array( "type" => "select", "label" => "Serving Method", "default" => "php", "options" => array( "php"=>"PHP (drop-in)", "htaccess"=>".htaccess", "nginx"=>"Nginx" ) ),
 
         ) );
@@ -271,6 +272,7 @@ class WPSC_Settings {
                 'cacheable_qs' => 'Query Strings',
                 'rejected_qs' => 'Query Strings',
                 'max_cache_file_size' => 'Limits',
+                'max_cache_age' => 'Limits',
 
             ),
             'private-cache' => array(

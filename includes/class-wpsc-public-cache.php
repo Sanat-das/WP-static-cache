@@ -287,12 +287,21 @@ class WPSC_Public_Cache {
         if ( ! is_dir( $dir ) ) {
             return;
         }
+        $max_age = (int) $settings->get( 'max_cache_age', 0 );
+        $max_age_ts = $max_age > 0 ? time() - ( $max_age * DAY_IN_SECONDS ) : 0;
         $it = new RecursiveDirectoryIterator( $dir, RecursiveDirectoryIterator::SKIP_DOTS );
         $files = new RecursiveIteratorIterator( $it, RecursiveIteratorIterator::CHILD_FIRST );
         foreach ( $files as $file ) {
             if ( $file->getFilename() === '.meta.json' ) {
                 $meta = json_decode( file_get_contents( $file->getRealPath() ), true );
+                $delete = false;
                 if ( $meta && isset( $meta['expires_at'] ) && $meta['expires_at'] > 0 && time() > $meta['expires_at'] ) {
+                    $delete = true;
+                }
+                if ( ! $delete && $max_age_ts > 0 && $file->getMTime() < $max_age_ts ) {
+                    $delete = true;
+                }
+                if ( $delete ) {
                     $parent = dirname( $file->getRealPath() );
                     array_map( 'unlink', glob( $parent . '/*' ) );
                     @rmdir( $parent );
