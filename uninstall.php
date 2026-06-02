@@ -22,9 +22,10 @@ if ( file_exists( $dropin ) ) {
 
 delete_option( 'wpsc_settings' );
 delete_option( 'wpsc_preload_queue' );
+delete_option( 'wpsc_preload_queue_priority' );
 delete_transient( 'wpsc_preload_lock' );
 
-$hooks = array( 'wpsc_preload_batch' );
+$hooks = array( 'wpsc_preload_batch', 'wpsc_cache_cleanup' );
 foreach ( $hooks as $hook ) {
     $ts = wp_next_scheduled( $hook );
     if ( $ts ) { wp_unschedule_event( $ts, $hook ); }

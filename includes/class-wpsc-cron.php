@@ -15,6 +15,7 @@ class WPSC_Cron {
         add_filter( 'cron_schedules', array( $this, 'add_schedules' ) );
         add_action( 'wpsc_preload_batch', array( $this, 'run_preload_batch' ) );
         add_action( 'wpsc_keepalive_ping', array( $this, 'run_keepalive_ping' ) );
+        add_action( 'wpsc_cache_cleanup', array( $this, 'run_cache_cleanup' ) );
         $this->schedule_events();
     }
 
@@ -63,6 +64,15 @@ class WPSC_Cron {
         } else {
             $this->unschedule_keepalive();
         }
+
+        $max_age = (int) $settings->get( 'max_cache_age', 0 );
+        if ( $max_age > 0 ) {
+            if ( ! wp_next_scheduled( 'wpsc_cache_cleanup' ) ) {
+                wp_schedule_event( time(), 'daily', 'wpsc_cache_cleanup' );
+            }
+        } else {
+            $this->unschedule_cleanup();
+        }
     }
 
     public function run_preload_batch() {
@@ -76,6 +86,10 @@ class WPSC_Cron {
             'blocking'   => false,
             'user-agent' => 'WPStaticCacheKeepAlive/1.0',
         ) );
+    }
+
+    public function run_cache_cleanup() {
+        WPSC_Public_Cache::flush_expired();
     }
 
     public function unschedule_batch() {
@@ -92,9 +106,17 @@ class WPSC_Cron {
         }
     }
 
+    public function unschedule_cleanup() {
+        $ts = wp_next_scheduled( 'wpsc_cache_cleanup' );
+        if ( $ts ) {
+            wp_unschedule_event( $ts, 'wpsc_cache_cleanup' );
+        }
+    }
+
     public function unschedule_all() {
         $this->unschedule_batch();
         $this->unschedule_keepalive();
+        $this->unschedule_cleanup();
     }
 
     private function compute_interval( $value, $unit ) {

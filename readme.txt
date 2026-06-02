@@ -4,7 +4,7 @@ Tags: cache, caching, performance, speed, optimization
 Requires at least: 5.6
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.2.3
+Stable tag: 2.3.0
 License: GPLv2 or later
 
 Dual-layer caching plugin: disk-based public cache for visitors, isolated per-user private cache for logged-in users, plus smart preload with stale-while-revalidate for instant page delivery.
@@ -14,6 +14,11 @@ Dual-layer caching plugin: disk-based public cache for visitors, isolated per-us
 WP Static Cache is a powerful dual-layer caching plugin for WordPress. It provides disk-based public page caching for non-logged-in visitors and fully isolated per-user private caching for authenticated users — all with a smart stale-while-revalidate preload system.
 
 == Changelog ==
+
+= 2.3.0 =
+* Added max image width and height options to resize original images before optimization.
+* Added dynamic thumbnail sizes manager with edit, add, and delete functionality via AJAX.
+* Added unlimited custom thumbnail size registration with user-defined names and crop options.
 
 = 2.2.3 =
 * Fixed Cache Statistics, Preload Status and System Information panels not loading on the Tools tab.

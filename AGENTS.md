@@ -18,6 +18,12 @@ JavaScript optimization (`class-wpsc-js-optimizer.php`) is applied **only to pub
 ### 4. Smart Preload with Stale-While-Revalidate (SWR)
 Preloading (`class-wpsc-preload.php`) works **only for public cache**. When enabled, expired public cache entries are not deleted immediately. Instead, during a configurable SWR window (`swr_window`, default 300s), the stale cached version is served instantly to visitors while a fresh version is regenerated in the background. This ensures fast page delivery even during cache regeneration.
 
+### 5. Dual Preload Queue (Priority + Main)
+Post events (publish, update, delete, trash, comment changes) and manual admin flush actions are added to a **separate priority queue** (`wpsc_preload_queue_priority`) that is drained **before** the main queue on every cron tick. This ensures time-sensitive content changes are regenerated immediately rather than waiting behind hundreds of stale-scan URLs. Callers use `queue_urls($urls, true)` for priority items and `queue_urls($urls)` (or `false`) for routine preload.
+
+### 6. Per-Taxonomy Cache TTL Overrides
+Each public taxonomy can have its own TTL setting (`taxonomy_ttl_{slug}`), overriding the global `taxonomy_ttl`. When empty, the global value is inherited. This is surfaced in the General settings tab under "Cache Duration" as a "Per-Taxonomy TTL" subsection. The page type classifier (`wpsc_get_page_type()`) returns `taxonomy:{slug}` for term archive pages, and `wpsc_get_ttl_for_page_type()` checks the per-taxonomy setting before falling back to the global value.
+
 ---
 
 ## Release Workflow

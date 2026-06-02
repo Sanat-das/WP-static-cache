@@ -70,7 +70,7 @@ class WPSC_Activation {
     }
 
     private static function clear_cron_schedules() {
-        $hooks = array( 'wpsc_preload_batch' );
+        $hooks = array( 'wpsc_preload_batch', 'wpsc_cache_cleanup' );
         foreach ( $hooks as $hook ) {
             $ts = wp_next_scheduled( $hook );
             if ( $ts ) {

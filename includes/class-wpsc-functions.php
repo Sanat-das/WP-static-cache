@@ -97,11 +97,25 @@ function wpsc_get_plugin_meta( $key = '' ) {
 function wpsc_get_page_type() {
     if ( is_front_page() || is_home() ) { return 'home'; }
     if ( is_singular() ) { return 'single'; }
-    if ( is_archive() || is_tax() || is_category() || is_tag() ) { return 'archive'; }
+    if ( is_archive() || is_tax() || is_category() || is_tag() ) {
+        $queried = get_queried_object();
+        if ( $queried instanceof WP_Term && ! empty( $queried->taxonomy ) ) {
+            return 'taxonomy:' . $queried->taxonomy;
+        }
+        return 'archive';
+    }
     return 'other';
 }
 
 function wpsc_get_ttl_for_page_type( $page_type ) {
+    if ( strpos( $page_type, 'taxonomy:' ) === 0 ) {
+        $tax_slug = substr( $page_type, 9 );
+        $tax_ttl  = wpsc_get_setting( 'taxonomy_ttl_' . $tax_slug, null );
+        if ( $tax_ttl !== null && $tax_ttl !== '' ) {
+            $ttl = (int) $tax_ttl;
+            return $ttl > 0 ? $ttl * 60 : 0;
+        }
+    }
     $ttls = array(
         'home'    => (int) wpsc_get_setting( 'homepage_ttl', 60 ),
         'archive' => (int) wpsc_get_setting( 'taxonomy_ttl', 60 ),

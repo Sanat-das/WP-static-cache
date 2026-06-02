@@ -1,4 +1,5 @@
 .wpsc-dashboard .nav-tab-wrapper { margin-bottom: 1em; }
+.wpsc-tab-content { margin-top: 12px; }
 .wpsc-dashboard .form-table th { width: 260px; }
 .wpsc-dashboard .form-table td p.description { margin-top: 4px; color: #666; font-style: italic; }
 .wpsc-toggle { position: relative; display: inline-block; width: 44px; height: 24px; }
@@ -10,6 +11,9 @@
 .wpsc-checkbox-label { display: inline-block; margin-right: 12px; white-space: nowrap; }
 .wpsc-action-btn { margin-right: 8px !important; }
 .wpsc-info-panel { background: #f0f6fc; padding: 12px 16px; border: 1px solid #c3d9e8; border-radius: 4px; max-width: 600px; }
+.wpsc-section-group .wpsc-info-panel { background: transparent; padding: 0; border: none; max-width: none; }
+.wpsc-section-group .wpsc-info-panel td { padding: 6px 0; border-bottom: none; }
+.wpsc-section-group .wpsc-info-panel td:first-child { font-weight: 600; width: 200px; }
 .wpsc-info-panel table { width: 100%; border-collapse: collapse; }
 .wpsc-info-panel td { padding: 6px 8px; border-bottom: 1px solid #e0e8ef; }
 .wpsc-info-panel td:first-child { font-weight: 600; width: 200px; }
@@ -17,9 +21,9 @@
 .wpsc-info-panel .wpsc-stat-number { font-size: 1.4em; font-weight: 700; color: #2271b1; }
 .wpsc-info-panel .wpsc-stat-label { color: #666; font-size: 0.9em; }
 
-.wpsc-section-title { background: #f0f6fc; padding: 10px 14px; margin: 24px 0 0 0; border-left: 4px solid #2271b1; font-size: 14px; font-weight: 600; }
+.wpsc-section-title { margin: 0 0 12px 0; padding: 0 0 8px 0; border-bottom: 1px solid #f0f0f1; font-size: 14px; font-weight: 600; color: #1d2327; }
 .wpsc-section { margin-top: 0; }
-.wpsc-section + .wpsc-section-title { margin-top: 32px; }
+.wpsc-section-group { border: 1px solid #c3c4c7; border-radius: 4px; padding: 12px 16px; margin-bottom: 20px; background: #fff; }
 
 .wpsc-dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
 .wpsc-card { background: #fff; border: 1px solid #dcdcde; border-radius: 4px; padding: 16px; }
